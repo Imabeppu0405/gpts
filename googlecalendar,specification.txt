@@ -1,0 +1,654 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Custom GPT Google Calendar API",
+    "version": "1.0.0",
+    "description": "This API is a custom GPT implementation of the Google Calendar API, supporting methods to retrieve and list calendars from a user's calendar list."
+  },
+  "servers": [
+    {
+      "url": "https://www.googleapis.com/calendar/v3",
+      "description": "Google Calendar API base URL"
+    }
+  ],
+  "paths": {
+    "/users/me/calendarList/{calendarId}": {
+      "get": {
+        "summary": "Retrieve a Calendar",
+        "operationId": "getCalendar",
+        "description": "Returns a calendar from the user's calendar list.",
+        "parameters": [
+          {
+            "name": "calendarId",
+            "in": "path",
+            "required": true,
+            "description": "The identifier of the calendar to retrieve. Use 'primary' to access the current user's primary calendar.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+                
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarListEntry"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication is required"
+          }
+        },
+        "security": [
+          {
+            "OAuth2": ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.readonly"]
+          }
+        ]
+      }
+    },
+    "/users/me/calendarList": {
+      "get": {
+        "summary": "List Calendars",
+        "operationId": "listCalendars",
+        "description": "Lists calendars within the user's calendar list.",
+        "parameters": [
+          {
+            "name": "maxResults",
+            "in": "query",
+            "description": "Maximum number of entries returned on one result page. The maximum supported value is 250.",
+            "schema": {
+              "type": "integer",
+              "default": 100
+            }
+          },
+          {
+            "name": "minAccessRole",
+            "in": "query",
+            "description": "The minimum access role for the user in the returned entries. Possible values are 'freeBusyReader', 'reader', 'writer', 'owner'.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "description": "Token specifying which result page to return.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "showDeleted",
+            "in": "query",
+            "description": "Whether to include deleted calendar list entries in the result. Optional. The default is False.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "showHidden",
+            "in": "query",
+            "description": "Whether to show hidden entries. Optional. The default is False.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "syncToken",
+            "in": "query",
+            "description": "Token obtained from the nextSyncToken field returned on the last page of results. It makes the result set include only entries that have changed since then.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "example": "calendar#calendarList"
+                    },
+                    "etag": {
+                      "type": "string"
+                    },
+                    "nextPageToken": {
+                      "type": "string"
+                    },
+                    "nextSyncToken": {
+                      "type": "string"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CalendarListEntry"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication is required"
+          }
+        },
+        "security": [
+          {
+            "OAuth2": ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.readonly"]
+          }
+        ]
+      }
+    },
+    "/calendars/{calendarId}/events": {
+      "get": {
+        "summary": "List all events in the primary Google Calendar",
+        "operationId": "listEvents",
+        "tags": [
+          "Event Operations"
+        ],
+        "description": "This endpoint allows the AI agent to fetch a list of events from the user's primary Google Calendar, which can be used to review upcoming events or to synchronize with external systems.",
+        "parameters": [
+            {
+            "name": "calendarId",
+            "in": "path",
+            "required": true,
+            "description": "The identifier of the calendar to retrieve. Use 'primary' to access the current user's primary calendar.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeMin",
+            "in": "query",
+            "required": false,
+            "description": "Lower bound (inclusive) for an event's start time to filter by.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "timeMax",
+            "in": "query",
+            "required": false,
+            "description": "Upper bound (exclusive) for an event's end time to filter by.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provides a detailed list of events from the primary calendar, filtered by the specified time range if provided, including information such as event IDs, titles, descriptions, and timing details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventList"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new event in the primary Google Calendar",
+        "operationId": "createEvent",
+        "tags": [
+          "Event Operations"
+        ],
+        "description": "This endpoint allows for creating a new event in the user's primary Google Calendar.",
+        "parameters": [
+            {
+            "name": "calendarId",
+            "in": "path",
+            "required": true,
+            "description": "The identifier of the calendar to retrieve. Use 'primary' to access the current user's primary calendar.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The event details that need to be created.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Event"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The event has been successfully created. The response includes the details of the newly created event, such as the event ID, title, and timing details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request could not be understood by the server due to malformed syntax. The client SHOULD NOT repeat the request without modifications."
+          }
+        }
+      }
+    },
+    "/calendars/{calendarId}/events/{eventId}": {
+      "get": {
+        "summary": "Retrieve details of a specific event from the primary Google Calendar",
+        "operationId": "getEvent",
+        "tags": [
+          "Event Operations"
+        ],
+        "description": "This endpoint allows the AI agent to fetch detailed information about a specific event by its ID from the user's primary Google Calendar. This can be used to display event details or to update them.",
+        "parameters": [
+            {
+            "name": "calendarId",
+            "in": "path",
+            "required": true,
+            "description": "The identifier of the calendar to retrieve. Use 'primary' to access the current user's primary calendar.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provides the details of the requested event, including event ID, title, description, and timing details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+          "summary": "Partially update an event's details",
+          "operationId": "patchEvent",
+          "tags": [
+            "Event Operations"
+          ],
+          "description": "This endpoint allows for partial updates to an event's details in the user's primary Google Calendar. It can be used to modify specific fields of an event without altering the entire event structure.",
+          "parameters": [
+            {
+            "name": "calendarId",
+            "in": "path",
+            "required": true,
+            "description": "The identifier of the calendar to retrieve. Use 'primary' to access the current user's primary calendar.",
+            "schema": {
+              "type": "string"
+            }
+          },
+            {
+              "name": "eventId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "The unique identifier for the event to be updated."
+            }
+          ],
+          "requestBody": {
+            "description": "Partial event details that need to be updated. Only the fields provided in the request body will be updated.",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "The event has been successfully updated with the provided details. The response includes the updated event data.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Event"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "put": {
+          "summary": "Update an event's details",
+          "operationId": "updateEvent",
+          "tags": [
+            "Event Operations"
+          ],
+          "description": "This endpoint allows for a complete update of an event's details in the user's primary Google Calendar. All fields of the event must be provided in the request body.",
+          "parameters": [
+            {
+            "name": "calendarId",
+            "in": "path",
+            "required": true,
+            "description": "The identifier of the calendar to retrieve. Use 'primary' to access the current user's primary calendar.",
+            "schema": {
+              "type": "string"
+            }
+          },
+            {
+              "name": "eventId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "The unique identifier for the event to be updated."
+            }
+          ],
+          "requestBody": {
+            "description": "Complete event details that need to be updated. The entire event structure must be provided.",
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Event"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "The event has been successfully updated with the new details. The response includes the updated event data.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Event"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Invalid request. The event ID provided did not match any existing events, or the event data provided was incomplete or formatted incorrectly."
+            },
+            "404": {
+              "description": "The event to update was not found."
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete an event from the primary Google Calendar",
+          "operationId": "deleteEvent",
+          "tags": [
+            "Event Operations"
+          ],
+          "description": "This endpoint allows the AI agent to remove an event from the user's primary Google Calendar by specifying the event's unique identifier. This is useful for canceling events or cleaning up past events that are no longer needed.",
+          "parameters": [
+            {
+            "name": "calendarId",
+            "in": "path",
+            "required": true,
+            "description": "The identifier of the calendar to retrieve. Use 'primary' to access the current user's primary calendar.",
+            "schema": {
+              "type": "string"
+            }
+          },
+            {
+              "name": "eventId",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string"
+              },
+              "description": "The unique identifier of the event to be deleted."
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "The event has been successfully deleted. No content is returned."
+            },
+            "404": {
+              "description": "The event to delete was not found. No action was taken."
+            }
+          }
+        }
+      }
+  },
+  "components": {
+    "schemas": {
+      "Event": {
+        "type": "object",
+        "description": "A schema defining the structure of an event in the Google Calendar. It includes all the necessary details such as identifiers, timing, and participant information.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A unique identifier for the event. This is used to reference the event in API calls."
+          },
+          "summary": {
+            "type": "string",
+            "description": "A brief summary or title of the event."
+          },
+          "description": {
+            "type": "string",
+            "description": "A detailed description of the event. This can include the agenda, topics to be discussed, or any other relevant information."
+          },
+          "start": {
+            "type": "object",
+            "description": "The start time of the event, including the date, time, and timezone.",
+            "properties": {
+              "dateTime": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The date and time when the event starts, in ISO 8601 format."
+              },
+              "timeZone": {
+                "type": "string",
+                "description": "The timezone in which the start time is specified."
+              }
+            }
+          },
+          "end": {
+            "type": "object",
+            "description": "The end time of the event, including the date, time, and timezone.",
+            "properties": {
+              "dateTime": {
+                "type": "string",
+                "format": "date-time",
+                "description": "The date and time when the event ends, in ISO 8601 format."
+              },
+              "timeZone": {
+                "type": "string",
+                "description": "The timezone in which the end time is specified."
+              }
+            }
+          },
+          "location": {
+            "type": "string",
+            "description": "The location where the event is taking place. This can be a physical address or a virtual meeting link."
+          },
+          "attendees": {
+            "type": "array",
+            "description": "A list of attendees participating in the event, along with their response status.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "type": "string",
+                  "description": "The email address of the attendee."
+                },
+                "responseStatus": {
+                  "type": "string",
+                  "description": "The attendee's response status for the event invitation (e.g., 'accepted', 'declined')."
+                }
+              }
+            }
+          },
+          "organizer": {
+            "type": "object",
+            "description": "The organizer of the event, typically the person who created the event.",
+            "properties": {
+              "email": {
+                "type": "string",
+                "description": "The email address of the organizer."
+              },
+              "displayName": {
+                "type": "string",
+                "description": "The display name of the organizer."
+              }
+            }
+          }
+        }
+      },
+      "EventList": {
+        "type": "object",
+        "description": "A schema representing a list of events, as would be retrieved from a 'list' operation on the Google Calendar API.",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "An array of event objects, each representing an individual event in the Google Calendar.",
+            "items": {
+              "$ref": "#/components/schemas/Event"
+            }
+          }
+        }
+      },
+      "CalendarListEntry": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "example": "calendar#calendarListEntry"
+          },
+          "etag": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "location": {
+            "type": "string",
+            "nullable": true
+          },
+          "timeZone": {
+            "type": "string",
+            "nullable": true
+          },
+          "summaryOverride": {
+            "type": "string",
+            "nullable": true
+          },
+          "colorId": {
+            "type": "string",
+            "nullable": true
+          },
+          "backgroundColor": {
+            "type": "string",
+            "nullable": true
+          },
+          "foregroundColor": {
+            "type": "string",
+            "nullable": true
+          },
+          "hidden": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "selected": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "accessRole": {
+            "type": "string"
+          },
+          "defaultReminders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reminder"
+            }
+          },
+          "notificationSettings": {
+            "$ref": "#/components/schemas/NotificationSettings"
+          },
+          "primary": {
+            "type": "boolean",
+            "nullable": true
+          }
+        }
+      },
+      "Reminder": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string"
+          },
+          "minutes": {
+            "type": "integer"
+          }
+        }
+      },
+      "NotificationSettings": {
+        "type": "object",
+        "properties": {
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Notification"
+            }
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "OAuth2": {
+        "type": "oauth2",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://accounts.google.com/o/oauth2/auth",
+            "tokenUrl": "https://oauth2.googleapis.com/token",
+            "scopes": {
+              "https://www.googleapis.com/auth/calendar": "Manage your calendars",
+            }
+          }
+        }
+      }
+    }
+  }
+}
